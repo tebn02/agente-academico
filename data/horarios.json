@@ -1,0 +1,42 @@
+{
+  "lunes": [
+    {
+      "materia": "Programacion",
+      "hora": "08:00 - 10:00",
+      "aula": "201"
+    },
+    {
+      "materia": "Base de Datos",
+      "hora": "14:00 - 16:00",
+      "aula": "305"
+    }
+  ],
+  "martes": [
+    {
+      "materia": "Matematicas",
+      "hora": "10:00 - 12:00",
+      "aula": "102"
+    }
+  ],
+  "miercoles": [
+    {
+      "materia": "Sistemas Agenticos",
+      "hora": "18:00 - 20:00",
+      "aula": "Virtual"
+    }
+  ],
+  "jueves": [
+    {
+      "materia": "Ingenieria de Software",
+      "hora": "08:00 - 10:00",
+      "aula": "204"
+    }
+  ],
+  "viernes": [
+    {
+      "materia": "Programacion",
+      "hora": "10:00 - 12:00",
+      "aula": "201"
+    }
+  ]
+}
