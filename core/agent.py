@@ -1,19 +1,14 @@
-from google import genai
-
-from config.settings import (
-    GEMINI_API_KEY,
-    GEMINI_MODEL,
-    validar_configuracion,
-)
+from config.settings import validar_configuracion
 from core.state import AgentState
 from tools.horario_tool import consultar_horario
+from chains.academic_chain import crear_cadena
 
 
 class AgenteAcademico:
     def __init__(self):
         validar_configuracion()
 
-        self.client = genai.Client(api_key=GEMINI_API_KEY)
+        self.cadena = crear_cadena()
         self.state = AgentState()
 
     def responder(self, mensaje: str) -> str:
@@ -43,42 +38,17 @@ class AgenteAcademico:
 
                     return resultado
 
-        historial = self.state.obtener_historial()
-
-        instrucciones = f"""
-Eres un asistente académico inteligente.
-
-Tu objetivo es ayudar a estudiantes universitarios a organizar
-sus actividades académicas.
-
-Puedes:
-- Ayudar a organizar tareas.
-- Recomendar qué actividad realizar primero.
-- Analizar fechas de entrega.
-- Ayudar a establecer prioridades.
-- Orientar al estudiante sobre su organización académica.
-
-No debes:
-- Inventar información académica.
-- Modificar fechas establecidas por profesores.
-- Eliminar actividades sin autorización.
-- Realizar o enviar trabajos automáticamente.
-
-Historial de conversación:
-{historial}
-
-Solicitud actual del estudiante:
-{mensaje}
-
-Responde de manera clara, breve y útil.
-"""
-
-        respuesta = self.client.models.generate_content(
-            model=GEMINI_MODEL,
-            contents=instrucciones,
+        respuesta = self.cadena.invoke(
+            {"pregunta": mensaje}
         )
 
-        texto_respuesta = respuesta.text
+        if isinstance(respuesta.content, list):
+            texto_respuesta = ""
+            for bloque in respuesta.content:
+                if isinstance(bloque, dict) and bloque.get("type") == "text":
+                    texto_respuesta += bloque.get("text", "")
+        else:
+            texto_respuesta = respuesta.content
 
         self.state.agregar_mensaje(
             "Asistente",
@@ -86,4 +56,3 @@ Responde de manera clara, breve y útil.
         )
 
         return texto_respuesta
-    
