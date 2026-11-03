@@ -1,5 +1,7 @@
 
+import time
 from typing import TypedDict
+
 from langgraph.graph import StateGraph, START, END
 
 from chains.academic_chain import crear_cadena
@@ -45,27 +47,82 @@ def decidir_ruta(estado: EstadoGrafo):
 
 
 def consultar_horario_nodo(estado: EstadoGrafo):
+    inicio = time.perf_counter()
+
     resultado = consultar_horario(estado["dia"])
+
+    duracion = time.perf_counter() - inicio
+
+    print("\n--- MÉTRICAS DEL AGENTE ---")
+    print("Ruta: horario")
+    print("Llamadas a herramientas: 1")
+    print("Llamadas a Gemini: 0")
+    print(f"Tiempo de herramienta: {duracion:.3f} segundos")
+    print("--------------------------\n")
+
     return {"respuesta": resultado}
 
 
 def consultar_gemini_nodo(estado: EstadoGrafo):
-    cadena = crear_cadena()
-    resultado = cadena.invoke({
-        "pregunta": estado["pregunta"]
-    })
+    inicio = time.perf_counter()
 
-    if isinstance(resultado.content, list):
-        texto = "".join(
-            bloque.get("text", "")
-            for bloque in resultado.content
-            if isinstance(bloque, dict)
-            and bloque.get("type") == "text"
-        )
-    else:
-        texto = str(resultado.content)
+    try:
+        cadena = crear_cadena()
 
-    return {"respuesta": texto}
+        resultado = cadena.invoke({
+            "pregunta": estado["pregunta"]
+        })
+
+        duracion = time.perf_counter() - inicio
+
+        if isinstance(resultado.content, list):
+            texto = "".join(
+                bloque.get("text", "")
+                for bloque in resultado.content
+                if isinstance(bloque, dict)
+                and bloque.get("type") == "text"
+            )
+        else:
+            texto = str(resultado.content)
+
+        print("\n--- MÉTRICAS DEL AGENTE ---")
+        print("Ruta: Gemini")
+        print("Invocaciones de cadena: 1")
+        print("Llamadas a herramientas: 0")
+        print(f"Tiempo de respuesta: {duracion:.3f} segundos")
+
+        if hasattr(resultado, "usage_metadata"):
+            uso = resultado.usage_metadata
+
+            if uso:
+                print(
+                    f"Tokens de entrada: "
+                    f"{uso.get('input_tokens', 'No disponible')}"
+                )
+                print(
+                    f"Tokens de salida: "
+                    f"{uso.get('output_tokens', 'No disponible')}"
+                )
+                print(
+                    f"Tokens totales: "
+                    f"{uso.get('total_tokens', 'No disponible')}"
+                )
+
+        print("--------------------------\n")
+
+        return {"respuesta": texto}
+
+    except Exception as error:
+        duracion = time.perf_counter() - inicio
+
+        print("\n--- ERROR EN GEMINI ---")
+        print("Ruta: Gemini")
+        print("Invocaciones de cadena intentadas: 1")
+        print(f"Tiempo transcurrido: {duracion:.3f} segundos")
+        print(f"Error: {type(error).__name__}: {error}")
+        print("-----------------------\n")
+
+        raise
 
 
 def crear_grafo():
